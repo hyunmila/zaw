@@ -29,9 +29,13 @@ else:
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
+    is_saved = False
     # process each frame
     for i in range(frame_count):
         ret, frame = cap.read()
+        original_frame = frame.copy()
+        is_red = False
+        is_yellow = False
         if not ret:
             break
         
@@ -51,6 +55,7 @@ else:
                 x, y, w, h = cv2.boundingRect(contour)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
                 cv2.putText(frame, 'yellow ball', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+                is_yellow = True
         
         # find contours for red balls
         contours_red, _ = cv2.findContours(mask_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -64,7 +69,16 @@ else:
                 else:  # larger red ball
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 128), 2)
                     cv2.putText(frame, 'red ball large', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 128), 2)
-        
+                is_red = True
+        if is_yellow and is_red and not is_saved:
+            mask_yellow_bgr = cv2.cvtColor(mask_yellow, cv2.COLOR_GRAY2BGR)
+            mask_red_bgr = cv2.cvtColor(mask_red, cv2.COLOR_GRAY2BGR)
+            cv2.imwrite('original_frame.png', original_frame)
+            cv2.imwrite('hsv_frame.png', hsv)
+            cv2.imwrite('yellow_mask.png', mask_yellow_bgr)
+            cv2.imwrite('red_mask.png', mask_red_bgr)
+            cv2.imwrite('annotated_frame.png', frame)
+            is_saved = True
         out.write(frame)
 
 
